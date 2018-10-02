@@ -14,30 +14,28 @@ class Board extends React.Component {
   renderSquare(i) {
     return (
       <Square
+        key={i}
         value={this.props.squares[i]}
         onClick={() => this.props.onClick(i)}
       />
     );
   }
 
+
   render() {
     return (
       <div>
-        <div className="board-row">
-          {this.renderSquare(0)}
-          {this.renderSquare(1)}
-          {this.renderSquare(2)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(3)}
-          {this.renderSquare(4)}
-          {this.renderSquare(5)}
-        </div>
-        <div className="board-row">
-          {this.renderSquare(6)}
-          {this.renderSquare(7)}
-          {this.renderSquare(8)}
-        </div>
+        {
+          [1, 2, 3].map((i) => {
+            return (
+              <div key={i} className="board-row">
+                {
+                  [1, 2, 3].map((j) => this.renderSquare(j + i * 3 - 4))
+                }
+              </div>
+            )
+          })
+        }
       </div>
     );
   }
@@ -54,6 +52,7 @@ class Game extends React.Component {
       }],
       stepNumber: 0,
       xIsNext: true,
+      historyDirection: 'column'
     };
   }
 
@@ -83,25 +82,32 @@ class Game extends React.Component {
     });
   }
 
+  changeHistoryDirection() {
+    this.setState({
+      historyDirection: this.state.historyDirection === 'column' ? 'column-reverse' : 'column'
+    })
+  }
+
   render() {
     const history = this.state.history;
     const current = history[this.state.stepNumber];
     const winner = calculateWinner(current.squares);
 
     const moves = history.map((step, move) => {
-      console.warn(step)
       const desc = move ?
         'Go to move #' + move + ` [${step.player} on ${Math.floor(step.position / 3) + 1}, ${step.position % 3 + 1}]`:
         'Go to game start';
       return (
         <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+          <button style={{fontWeight: this.state.stepNumber === move ? 'bold' : 'normal'}} onClick={() => this.jumpTo(move)}>{desc}</button>
         </li>
       )
     })
     let status;
     if (winner) {
       status = 'Winner: ' + winner;
+    } else if (current.squares.every((square) => square)) {
+      status = 'A draw';
     } else {
       status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
     }
@@ -116,7 +122,8 @@ class Game extends React.Component {
         </div>
         <div className="game-info">
           <div>{status}</div>
-          <ol>{moves}</ol>
+          <ol style={{display: 'flex', flexDirection: this.state.historyDirection}}>{moves}</ol>
+          <button onClick={() => {this.changeHistoryDirection()}}>reverse</button>
         </div>
       </div>
     );
